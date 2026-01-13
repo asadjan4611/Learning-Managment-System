@@ -18,16 +18,21 @@ export const createOrder = CatchAsyncError(
     try {
       const { courseId, payment_info } = req.body as IOrder;
 
-      const user = await userModel.findById(req.user?.id);
-      const courseExistHandler = user?.courses.some(
-        (course: any) => course._id.toString() === courseId
-      );
-
+      const user = await userModel.findById(req.user?._id);
+     const normalizedCourseId = String(courseId);
+     const courseExistHandler = user?.courses?.some((course: any) => {
+        // tolerate historical bad data where `courses` items might be raw ids/strings
+        const id = course?.courseId ?? course?._id ?? course;
+        if (!id) return false;
+        return id.toString() === normalizedCourseId;
+      });
       if (courseExistHandler) {
         return next(
           new ErrorHandler("You have already applied this course", 500)
         );
       }
+
+    //   console.log(courseExistHandler)
 
       const course = await CourseModel.findById(courseId);
 
@@ -36,13 +41,14 @@ export const createOrder = CatchAsyncError(
           new ErrorHandler("COurse is not exist in the Database", 500)
         );
       }
-
+//   console.log(user)
+        
       const data: any = {
         courseId: course._id,
         userId: user?._id,
         payment_info
       };
-
+//    console.log(data)
       newOrder(data, res, next);
 
       const mailData = {
@@ -58,7 +64,7 @@ export const createOrder = CatchAsyncError(
         },
       };
 
-      // send Mail
+    //   send Mail
       const html = await ejs.renderFile(
         path.join(__dirname, "../mails/order-confirmation.ejs"),
         { order: mailData }
@@ -79,9 +85,11 @@ export const createOrder = CatchAsyncError(
 
       user?.courses.push({ courseId: course._id?.toString() } as any);
       await redis.set(req.user!._id as string, JSON.stringify(user));
-      await user?.save();
-      course.purchased = (course.purchased || 0) + 1;
-      await course.save();
+      await user?.save({validateBeforeSave:false});
+
+      //course sell + 1
+      course.purchased = course?.purchased + 1;
+      await course.save({validateBeforeSave:false});
 
       await NotificationModel.create({
         user: user?._id,

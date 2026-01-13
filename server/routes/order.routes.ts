@@ -4,7 +4,7 @@ import { isAuthenticated } from "../middleware/auth";
 import { createOrder } from "../controller/order.controller";
 const orderRouter = express.Router();
 
-orderRouter.put("/createOrder",isAuthenticated,createOrder);
+orderRouter.post("/createOrder",isAuthenticated,createOrder);
 
 
 

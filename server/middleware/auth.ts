@@ -29,6 +29,7 @@ export const isAuthenticated = CatchAsyncError(
         return next(new ErrorHandler("user is not found ", 400));
       }
       req.user = JSON.parse(user);
+      // console.log(req.user)
       next();
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
@@ -40,7 +41,7 @@ export const isAuthenticated = CatchAsyncError(
 
 export const authorizeRole = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-
+    // console.log("Role is ",req.user)
     if (!roles.includes(req.user?.role || " ")) {
       return next(
         new ErrorHandler(
