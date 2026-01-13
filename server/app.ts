@@ -5,9 +5,12 @@ import { errorMiddleware } from "./middleware/error";
 import userRouter from './routes/user.route'
 import cookieParser from "cookie-parser";
 import cors from "cors"
+import { url } from "inspector";
+import courseRouter from "./routes/course.route";
 
 app.use(express.json({limit:"50mb"}));
-
+app.use(cookieParser());
+app.use(express.urlencoded({extended:true}));
 
 app.use((cors({
     origin:process.env.ORIGIN
@@ -15,6 +18,8 @@ app.use((cors({
 
 
 app.use("/api/v1",userRouter)
+app.use("/api/v1",courseRouter);
+
 
 //testing routes
 

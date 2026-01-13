@@ -1,17 +1,16 @@
-import mongoose  from "mongoose";
-import dotenv from "dotenv"
-dotenv.config();
+require('dotenv').config();
+import mongoose from 'mongoose';
 
-const dbURL:string = process.env.DB_URL || " ";
+const dbUrl: string= process.env.DB_URL || '';
 
-const  connectDB = async ()=>{
+const connectDB= async ()=>{
     try {
-        await mongoose.connect(dbURL).then((data:any)=>{
-            console.log(`Databse is connected with ${data.connection.host}`)
-        })
-    } catch (error:any) {
-        console.log(error.message )
-        setTimeout(connectDB,5000)
+        mongoose.connect(dbUrl).then((data:any)=>{
+            console.log(`MongoDB connected with server: ${data.connection.host}`);
+        });
+    } catch (error: any) {
+        console.log(`MongoDB connection error: ${error}`);
+        setTimeout(connectDB, 5000);      
     }
 }
 
