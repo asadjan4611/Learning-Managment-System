@@ -8,7 +8,7 @@ import path from "path";
 import { sendMail } from "../utilis/sendMails";
 import NotificationModel from "../models/notificationModel";
 import ejs from "ejs";
-import { newOrder } from "../services/order.service";
+import { getAllOrdersServices, newOrder } from "../services/order.service";
 import { redis } from "../utilis/redis";
 
 //create Order
@@ -49,7 +49,7 @@ export const createOrder = CatchAsyncError(
         payment_info
       };
 //    console.log(data)
-      newOrder(data, res, next);
+    //   newOrder(data, res, next);
 
       const mailData = {
         order: {
@@ -88,7 +88,7 @@ export const createOrder = CatchAsyncError(
       await user?.save({validateBeforeSave:false});
 
       //course sell + 1
-      course.purchased = course?.purchased + 1;
+      course.purchased = (course?.purchased || 0)+ 1;
       await course.save({validateBeforeSave:false});
 
       await NotificationModel.create({
@@ -100,6 +100,19 @@ export const createOrder = CatchAsyncError(
       newOrder(data, res, next);
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 500));
+    }
+  }
+);
+
+
+
+// get all orders ---admin
+export const getAllOrders = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      getAllOrdersServices(res);
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
     }
   }
 );
