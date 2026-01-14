@@ -11,6 +11,8 @@ import { accessTokenOptions, refreshTokenOptions, sendToken } from "../utilis/jw
 import { redis } from "../utilis/redis";
 import { getAllUsersService, getUserById, updateUserRoleService } from "../services/user.service";
 import cloudinary from "cloudinary";
+
+
 interface IRegistrationBody {
   name: string;
   email: string;
@@ -389,6 +391,60 @@ export const deleteUser = CatchAsyncError(
       res.status(201).json({
         success: true,
         message: "User deleted successfully.",
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+
+
+
+// update access_token
+
+export const updateAccessToken = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      console.log("Welocome at ");
+      const refresh_token = req.cookies.refresh_token as string;
+      const decoded = jwt.verify(
+        refresh_token,
+        process.env.REFRESH_TOKEN as Secret
+      ) as JwtPayload;
+      const message = "Could not refresh token";
+      if (!decoded) {
+        return next(new ErrorHandler(message, 400));
+      }
+      const session = await redis.get(decoded.id as string);
+      if (!session) {
+        return next(new ErrorHandler("Please login first for this Resources", 400));
+      }
+
+      const user = JSON.parse(session);
+      const accessToken = jwt.sign(
+        { id: user._id },
+        process.env.ACCESS_TOKEN as Secret,
+        {
+          expiresIn: "40m",
+        }
+      );
+      const refreshToken = jwt.sign(
+        { id: user._id },
+        process.env.REFRESH_TOKEN as Secret,
+        {
+          expiresIn: "5d",
+        }
+      );
+      req.user = user;
+      res.cookie("access_token", accessToken, accessTokenOptions);
+      res.cookie("refresh_token", refreshToken, refreshTokenOptions);
+
+
+      await redis.set(user._id,JSON.stringify(user),"EX",604800); // 7 days would be eqaul to 6048000
+      res.status(200).json({
+        success: true,
+        accessToken,
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
